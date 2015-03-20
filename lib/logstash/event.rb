@@ -16,6 +16,13 @@ require "logstash/json"
 class LogStash::ShutdownEvent; end
 class LogStash::FlushEvent; end
 
+module LogStash
+  FLUSH = LogStash::FlushEvent.new
+
+  # LogStash::SHUTDOWN is used by plugins
+  SHUTDOWN = LogStash::ShutdownEvent.new
+end
+
 # the logstash event object.
 #
 # An event is simply a tuple of (timestamp, data).
