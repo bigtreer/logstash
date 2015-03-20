@@ -372,14 +372,21 @@ module LogStash; module Config; module AST
       # at the end, events is returned to handle the case where no branch match and no branch code is executed
       # so we must make sure to return the current event.
 
-      return <<-CODE
-        events = events.flat_map do |event|
-          events = [event]
+      if recursive_select_parent(PluginSection).first.plugin_type.text_value == "filter"
+        <<-CODE
+          events = events.flat_map do |event|
+            events = [event]
+            #{super}
+            end
+            events
+          end
+        CODE
+      else
+        <<-CODE
           #{super}
           end
-          events
-        end
-      CODE
+        CODE
+      end
     end
   end
 
