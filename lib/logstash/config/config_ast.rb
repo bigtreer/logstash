@@ -81,14 +81,11 @@ module LogStash; module Config; module AST
       ["filter", "output"].each do |type|
         # defines @filter_func and @output_func
 
-        # definitions << "@#{type}_func = lambda do |event, &block|"
-        # definitions << "  events = [event]"
-
         if type == "filter"
-          definitions << "@#{type}_func = lambda do |event, &block|"
+          definitions << "def #{type}_func(event, &block)"
           definitions << "  events = [event]"
         else
-          definitions << "@#{type}_func = lambda do |event|"
+          definitions << "def #{type}_func(event)"
         end
         definitions << "  @logger.debug? && @logger.debug(\"#{type} received\", :event => event.to_hash)"
 
@@ -97,7 +94,7 @@ module LogStash; module Config; module AST
         end
 
         if type == "filter"
-          definitions << "  events.flatten.each{|e| block.call(e) }"
+          definitions << "  events.each{|e| block.call(e) unless e.cancelled?}"
         end
         definitions << "end"
       end
@@ -219,13 +216,7 @@ module LogStash; module Config; module AST
         return "start_input(#{variable_name})"
       when "filter"
         return <<-CODE
-          events = events.flat_map do |event|
-            next [] if event.cancelled?
-
-            new_events = []
-            #{variable_name}.filter(event){|new_event| new_events << new_event}
-            event.cancelled? ? new_events : new_events.unshift(event)
-          end
+          events = #{variable_name}.multi_filter(events)
         CODE
       when "output"
         return "#{variable_name}.handle(event)\n"
@@ -372,21 +363,10 @@ module LogStash; module Config; module AST
       # at the end, events is returned to handle the case where no branch match and no branch code is executed
       # so we must make sure to return the current event.
 
-      if recursive_select_parent(PluginSection).first.plugin_type.text_value == "filter"
-        <<-CODE
-          events = events.flat_map do |event|
-            events = [event]
-            #{super}
-            end
-            events
-          end
-        CODE
-      else
-        <<-CODE
-          #{super}
-          end
-        CODE
-      end
+      <<-CODE
+        #{super}
+        end
+      CODE
     end
   end
 

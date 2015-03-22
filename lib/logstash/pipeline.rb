@@ -201,11 +201,7 @@ class LogStash::Pipeline
 
         case event
         when LogStash::Event
-          # use events array to guarantee ordering of origin vs created events
-          # where created events are emitted by filters like split or metrics
-          events = []
-          filter(event) { |newevent| events << newevent }
-          events.each { |event| @filter_to_output.push(event) }
+          filter_func(event) { |e| @filter_to_output.push(e) }
         when LogStash::FlushEvent
           # handle filter flushing here so that non threadsafe filters (thus only running one filterworker)
           # don't have to deal with thread safety implementing the flush method
@@ -230,7 +226,7 @@ class LogStash::Pipeline
     while true
       event = @filter_to_output.pop
       break if event == LogStash::SHUTDOWN
-      output(event)
+      output_func(event)
     end # while true
 
     @outputs.each do |output|
@@ -269,12 +265,9 @@ class LogStash::Pipeline
     return klass.new(*args)
   end
 
+  # for backward compatibility in devutils for the rspec helpers
   def filter(event, &block)
-    @filter_func.call(event, &block)
-  end
-
-  def output(event)
-    @output_func.call(event)
+    filter_func(event, &block)
   end
 
   # perform filters flush and yeild flushed event to the passed block

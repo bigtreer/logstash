@@ -146,6 +146,16 @@ class LogStash::Filters::Base < LogStash::Plugin
     raise "#{self.class}#filter must be overidden"
   end # def filter
 
+
+  def multi_filter(events)
+    result = []
+    events.each do |event|
+      result << event
+      filter(event){|new_event| result << new_event}
+    end
+    result
+  end
+
   public
   def execute(event, &block)
     filter(event, &block)
