@@ -201,7 +201,7 @@ class LogStash::Pipeline
 
         case event
         when LogStash::Event
-          filter_func(event) { |e| @filter_to_output.push(e) }
+          filter_func(event).each { |e| @filter_to_output.push(e) unless e.cancelled? }
         when LogStash::FlushEvent
           # handle filter flushing here so that non threadsafe filters (thus only running one filterworker)
           # don't have to deal with thread safety implementing the flush method
@@ -267,7 +267,7 @@ class LogStash::Pipeline
 
   # for backward compatibility in devutils for the rspec helpers
   def filter(event, &block)
-    filter_func(event, &block)
+    filter_func(event).each { |e| block.call(e) }
   end
 
   # perform filters flush and yeild flushed event to the passed block

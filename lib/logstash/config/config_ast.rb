@@ -82,7 +82,7 @@ module LogStash; module Config; module AST
         # defines @filter_func and @output_func
 
         if type == "filter"
-          definitions << "def #{type}_func(event, &block)"
+          definitions << "def #{type}_func(event)"
           definitions << "  events = [event]"
         else
           definitions << "def #{type}_func(event)"
@@ -94,7 +94,7 @@ module LogStash; module Config; module AST
         end
 
         if type == "filter"
-          definitions << "  events.each{|e| block.call(e) unless e.cancelled?}"
+          definitions << "  events"
         end
         definitions << "end"
       end
