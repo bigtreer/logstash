@@ -148,7 +148,7 @@ class LogStash::Filters::Base < LogStash::Plugin
 
 
   # in 1.5.0 multi_filter is meant to be used in the generated filter function in LogStash::Config::AST::Plugin only
-  # and is temporay until we refactor the filter method interface to accept events list and return events list,
+  # and is temporary until we refactor the filter method interface to accept events list and return events list,
   # just list in multi_filter see https://github.com/elastic/logstash/issues/2872.
   # refactoring the filter method will mean updating all plugins which we want to avoid doing for 1.5.0.
   #
