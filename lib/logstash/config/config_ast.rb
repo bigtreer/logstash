@@ -81,21 +81,15 @@ module LogStash; module Config; module AST
       ["filter", "output"].each do |type|
         # defines @filter_func and @output_func
 
-        if type == "filter"
-          definitions << "def #{type}_func(event)"
-          definitions << "  events = [event]"
-        else
-          definitions << "def #{type}_func(event)"
-        end
+        definitions << "def #{type}_func(event)"
+        definitions << "  events = [event]" if type == "filter"
         definitions << "  @logger.debug? && @logger.debug(\"#{type} received\", :event => event.to_hash)"
 
         sections.select { |s| s.plugin_type.text_value == type }.each do |s|
           definitions << s.compile.split("\n", -1).map { |e| "  #{e}" }
         end
 
-        if type == "filter"
-          definitions << "  events"
-        end
+        definitions << "  events" if type == "filter"
         definitions << "end"
       end
 
