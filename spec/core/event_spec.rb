@@ -289,8 +289,7 @@ describe LogStash::Event do
     it "should tag and warn for invalid value" do
       ts = LogStash::Timestamp.now
       expect(LogStash::Timestamp).to receive(:now).twice.and_return(ts)
-      expect(Cabin::Channel).to receive(:get).twice.and_return(logger)
-      expect(logger).to receive(:warn).twice
+      expect(LogStash::Event::LOGGER).to receive(:warn).twice
 
       event = LogStash::Event.new("@timestamp" => :foo)
       expect(event.timestamp.to_i).to eq(ts.to_i)
@@ -306,8 +305,7 @@ describe LogStash::Event do
     it "should tag and warn for invalid string format" do
       ts = LogStash::Timestamp.now
       expect(LogStash::Timestamp).to receive(:now).and_return(ts)
-      expect(Cabin::Channel).to receive(:get).and_return(logger)
-      expect(logger).to receive(:warn)
+      expect(LogStash::Event::LOGGER).to receive(:warn)
 
       event = LogStash::Event.new("@timestamp" => "foo")
       expect(event.timestamp.to_i).to eq(ts.to_i)

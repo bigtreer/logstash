@@ -55,25 +55,26 @@ class LogStash::Event
   TIMESTAMP_FAILURE_TAG = "_timestampparsefailure"
   TIMESTAMP_FAILURE_FIELD = "_@timestamp"
 
+  METADATA = "@metadata".freeze
+  METADATA_BRACKETS = "[#{METADATA}]".freeze
+
   # Floats outside of these upper and lower bounds are forcibly converted
   # to scientific notation by Float#to_s
   MIN_FLOAT_BEFORE_SCI_NOT = 0.0001
   MAX_FLOAT_BEFORE_SCI_NOT = 1000000000000000.0
 
+  LOGGER = Cabin::Channel.get(LogStash)
+
   public
   def initialize(data = {})
-    @logger = Cabin::Channel.get(LogStash)
     @cancelled = false
     @data = data
     @accessors = LogStash::Util::Accessors.new(data)
     @data[VERSION] ||= VERSION_ONE
-    @data[TIMESTAMP] = init_timestamp(@data[TIMESTAMP])
+    ts = @data[TIMESTAMP]
+    @data[TIMESTAMP] = ts ? init_timestamp(ts) : LogStash::Timestamp.now
 
-    @metadata = if @data.include?("@metadata")
-      @data.delete("@metadata")
-    else
-      {}
-    end
+    @metadata = @data.delete(METADATA) || {}
     @metadata_accessors = LogStash::Util::Accessors.new(@metadata)
   end # def initialize
 
@@ -120,9 +121,6 @@ class LogStash::Event
     raise DeprecatedMethod
   end # def unix_timestamp
 
-  # field-related access
-  METADATA = "@metadata".freeze
-  METADATA_BRACKETS = "[#{METADATA}]".freeze
   public
   def [](fieldref)
     if fieldref.start_with?(METADATA_BRACKETS)
@@ -274,12 +272,12 @@ class LogStash::Event
 
   def init_timestamp(o)
     begin
-      timestamp = o ? LogStash::Timestamp.coerce(o) : LogStash::Timestamp.now
+      timestamp = LogStash::Timestamp.coerce(o)
       return timestamp if timestamp
 
-      @logger.warn("Unrecognized #{TIMESTAMP} value, setting current time to #{TIMESTAMP}, original in #{TIMESTAMP_FAILURE_FIELD}field", :value => o.inspect)
+      LOGGER.warn("Unrecognized #{TIMESTAMP} value, setting current time to #{TIMESTAMP}, original in #{TIMESTAMP_FAILURE_FIELD}field", :value => o.inspect)
     rescue LogStash::TimestampParserError => e
-      @logger.warn("Error parsing #{TIMESTAMP} string, setting current time to #{TIMESTAMP}, original in #{TIMESTAMP_FAILURE_FIELD} field", :value => o.inspect, :exception => e.message)
+      LOGGER.warn("Error parsing #{TIMESTAMP} string, setting current time to #{TIMESTAMP}, original in #{TIMESTAMP_FAILURE_FIELD} field", :value => o.inspect, :exception => e.message)
     end
 
     @data["tags"] ||= []
@@ -294,7 +292,7 @@ class LogStash::Event
     if @metadata.nil?
       to_hash
     else
-      to_hash.merge("@metadata" => @metadata)
+      to_hash.merge(METADATA => @metadata)
     end
   end
 
