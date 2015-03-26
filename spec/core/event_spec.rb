@@ -398,7 +398,15 @@ describe LogStash::Event do
         expect(subject["foo"]).to eq("bar")
       end
     end
+  end
 
+  context "signal events" do
+    it "should define the shutdown event" do
+      # the SHUTDOWN and FLUSH constants are part of the plugin API contract
+      # if they are changed, all plugins must be updated
+      expect(LogStash::SHUTDOWN).to be_a(LogStash::ShutdownEvent)
+      expect(LogStash::FLUSH).to be_a(LogStash::FlushEvent)
+    end
   end
 
 end
